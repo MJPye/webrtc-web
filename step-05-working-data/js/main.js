@@ -10,62 +10,26 @@ var turnReady;
 
 var localConnection;
 var remoteConnection;
-var sendDataChannel;
-var receiveDataChannel;
+var sendChannel;
+var receiveChannel;
 var pcConstraint;
 var dataConstraint;
-const localVideo = document.getElementById('localVideo');
-const remoteVideo = document.getElementById('remoteVideo');
 var dataChannelSend = document.querySelector('textarea#dataChannelSend');
 var dataChannelReceive = document.querySelector('textarea#dataChannelReceive');
-var startDataButton = document.querySelector('button#startDataButton');
-var sendDataButton = document.querySelector('button#sendDataButton');
-var addLocalStreamButton = document.querySelector('button#addLocalStreamButton');
-var addRemoteStreamButton = document.querySelector('button#addRemoteStreamButton');
+var startButton = document.querySelector('button#startButton');
+var sendButton = document.querySelector('button#sendButton');
 var closeButton = document.querySelector('button#closeButton');
-// var createConnectionButton = document.querySelector('button#createConnectionButton');
 
-startDataButton.onclick = createDataConnection;
-addLocalStreamButton.onclick = addLocalStreamChannel;
-addRemoteStreamButton.onclick = addRemoteStreamChannel;
-sendDataButton.onclick = sendData;
+startButton.onclick = createConnection;
+sendButton.onclick = sendData;
 closeButton.onclick = stop;
 
-function enableStartDataButton() {
-  startDataButton.disabled = false;
+function enableStartButton() {
+  startButton.disabled = false;
 }
-function disableStartDataButton() {
-  startDataButton.disabled = true;
-}
-function enableAddLocalStreamButton() {
-  addLocalStreamButton.disabled = false;
-}
-function disableAddLocalStreamButton() {
-  addLocalStreamButton.disabled = true;
-}
-function enableAddRemoteStreamButton() {
-  addRemoteStreamButton.disabled = false;
-}
-function disableAddRemoteStreamButton() {
-  addRemoteStreamButton.disabled = true;
-}
-function enableSendDataButton() {
-  sendDataButton.disabled = false;
-}
-function disableSendDataButton() {
-  sendDataButton.disabled = true;
-}
-// function enableCreateConnectionButton() {
-//   createConnectionButton.disabled = false;
-// }
-// function disableCreateConnectionButton() {
-//   createConnectionButton.disabled = true;
-// }
-function enableCloseButton() {
-  closeButton.disabled = false;
-}
-function disableCloseButton() {
-  closeButton.disabled = true;
+
+function disableSendButton() {
+  sendButton.disabled = true;
 }
 
 var pcConfig = {
@@ -75,10 +39,10 @@ var pcConfig = {
 };
 
 // Set up audio and video regardless of what devices are present.
-var sdpConstraints = {
-  offerToReceiveAudio: true,
-  offerToReceiveVideo: true
-};
+// var sdpConstraints = {
+//   offerToReceiveAudio: true,
+//   offerToReceiveVideo: true
+// };
 
 /////////////////////////////////////////////
 
@@ -127,7 +91,7 @@ function sendMessage(message) {
 // This client receives a message
 socket.on('message', function(message) {
   console.log('Client received message:', message);
-  if (message === 'initiate_data_transfer') { //MATT another trigger msg here
+  if (message === 'got user media') { //MATT another trigger msg here
     maybeStart();
   } else if (message.type === 'offer') {
     if (!isInitiator && !isStarted) {
@@ -179,9 +143,8 @@ socket.on('message', function(message) {
 // console.log('Getting user media with constraints', constraints);
 
 // MATT Added the trigger without media
-function createDataConnection() {
-  console.log("Creating connection Matt")
-  sendMessage('initiate_data_transfer');
+function createConnection() {
+  sendMessage('got user media');
   if (isInitiator) {
     maybeStart();
   }
@@ -215,21 +178,20 @@ window.onbeforeunload = function() {
 /////////////////////////////////////////////////////////
 
 function createPeerConnection() {
-  // dataChannelSend.placeholder = '';
-  // var servers = null;
-  // pcConstraint = null;
-  // dataConstraint = null;
+  dataChannelSend.placeholder = '';
+  var servers = null;
+  pcConstraint = null;
+  dataConstraint = null;
   try {
     pc = new RTCPeerConnection(null);
-    // sendDataChannel = pc.createDataChannel('sendDataChannel',
-    //   dataConstraint);
-    //   console.log('Created send data channel');
+    sendChannel = pc.createDataChannel('sendDataChannel',
+      dataConstraint);
+      console.log('Created send data channel');
 
     pc.onicecandidate = handleIceCandidate;
-    createDataChannels();
-    // sendDataChannel.onopen = onSendDataChannelStateChange;
-    // sendDataChannel.onclose = onSendDataChannelStateChange;
-    // pc.ondatachannel = receiveDataChannelCallback;
+    sendChannel.onopen = onSendChannelStateChange;
+    sendChannel.onclose = onSendChannelStateChange;
+    pc.ondatachannel = receiveChannelCallback;
     // pc.onaddstream = handleRemoteStreamAdded; //MATT change stream to data
     // pc.onremovestream = handleRemoteStreamRemoved; //MATT change stream to data
     console.log('Created RTCPeerConnnection');
@@ -240,84 +202,18 @@ function createPeerConnection() {
   }
 }
 
-function createDataChannels() {
-  dataChannelSend.placeholder = ''; //MATT what happens if remove.
-  dataConstraint = null;
-  try {
-    sendDataChannel = pc.createDataChannel('sendDataChannel',
-      dataConstraint);
-      console.log('Created send data channel');
-    sendDataChannel.onopen = onSendDataChannelStateChange;
-    sendDataChannel.onclose = onSendDataChannelStateChange;
-    pc.ondatachannel = receiveDataChannelCallback;
-    console.log('Created Data Channels');
-  } catch (e) {
-    console.log('Failed to create Data Channels, exception: ' + e.message);
-    alert('Cannot create Data Channels object.');
-    return;
-  }
-}
-
-function addRemoteStreamChannel(){
-  try {
-    pc.ontrack = handleRemoteStreamAdded; //MATT change stream to data
-    pc.onremovestream = handleRemoteStreamRemoved; //MATT change stream to data
-  } catch (e) {
-    console.log('Failed to create Stream Channels, exception: ' + e.message);
-    alert('Cannot create Stream Channels object.');
-    return;
-  }
-}
-
-function gotStream(stream) {
-  console.log('Adding local stream.');
-  localStream = stream;
-  localVideo.srcObject = stream;
-  sendMessage('got user media');
-  pc.addTrack(localStream);
-  // if (isInitiator) {
-  //   maybeStart();
-  // }
-}
-
-var constraints = {
-  video: true
-};
-
-function addLocalStreamChannel(){
-  try {
-    // var localVideo = document.querySelector('#localVideo');
-    // var remoteVideo = document.querySelector('#remoteVideo');
-
-    navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: true
-    })
-    .then(gotStream)
-    .catch(function(e) {
-      alert('getUserMedia() error: ' + e.name);
-    });
-    console.log('Getting user media with constraints', constraints);
-    doCall();
-  } catch (e) {
-    console.log('Failed to create Stream Channels, exception: ' + e.message);
-    alert('Cannot create Stream Channels object.');
-    return;
-  }
-}
-
 function sendData() {
   var data = dataChannelSend.value;
-  sendDataChannel.send(data);
+  sendChannel.send(data);
   console.log('Sent Data: ' + data);
 }
 
-function receiveDataChannelCallback(event) {
+function receiveChannelCallback(event) {
   console.log('Receive Channel Callback');
-  receiveDataChannel = event.channel;
-  receiveDataChannel.onmessage = onReceiveMessageCallback;
-  receiveDataChannel.onopen = onReceiveDataChannelStateChange;
-  receiveDataChannel.onclose = onReceiveDataChannelStateChange;
+  receiveChannel = event.channel;
+  receiveChannel.onmessage = onReceiveMessageCallback;
+  receiveChannel.onopen = onReceiveChannelStateChange;
+  receiveChannel.onclose = onReceiveChannelStateChange;
 }
 
 function onReceiveMessageCallback(event) {
@@ -325,23 +221,23 @@ function onReceiveMessageCallback(event) {
   dataChannelReceive.value = event.data;
 }
 
-function onSendDataChannelStateChange() {
-  var readyState = sendDataChannel.readyState;
+function onSendChannelStateChange() {
+  var readyState = sendChannel.readyState;
   console.log('Send channel state is: ' + readyState);
   if (readyState === 'open') {
     dataChannelSend.disabled = false;
     dataChannelSend.focus();
-    sendDataButton.disabled = false;
+    sendButton.disabled = false;
     closeButton.disabled = false;
   } else {
     dataChannelSend.disabled = true;
-    sendDataButton.disabled = true;
+    sendButton.disabled = true;
     closeButton.disabled = true;
   }
 }
 
-function onReceiveDataChannelStateChange() {
-  var readyState = receiveDataChannel.readyState;
+function onReceiveChannelStateChange() {
+  var readyState = receiveChannel.readyState;
   console.log('Receive channel state is: ' + readyState);
 }
 
@@ -415,16 +311,15 @@ function requestTurn(turnURL) {
   }
 }
 
-function handleRemoteStreamAdded(event) {
-  // var remoteVideo = document.querySelector('#remoteVideo');
-  console.log('Remote stream added.');
-  remoteStream = event.streams;
-  remoteVideo.srcObject = remoteStream;
-}
+// function handleRemoteStreamAdded(event) {
+//   console.log('Remote stream added.');
+//   remoteStream = event.stream;
+//   remoteVideo.srcObject = remoteStream;
+// }
 
-function handleRemoteStreamRemoved(event) {
-  console.log('Remote stream removed. Event: ', event);
-}
+// function handleRemoteStreamRemoved(event) {
+//   console.log('Remote stream removed. Event: ', event);
+// }
 
 function hangup() {
   console.log('Hanging up.');
@@ -435,32 +330,12 @@ function hangup() {
 function handleRemoteHangup() {
   console.log('Session terminated.');
   stop();
-  // isInitiator = false;
-  isStarted = false;
+  isInitiator = false;
 }
 
 function stop() {
   console.log('Trying to stop session');
   isStarted = false;
-
-  // Close the data channels
-  if (sendDataChannel) {
-    sendDataChannel.close();
-    sendDataChannel = null;
-  }
-  if (receiveDataChannel) {
-    receiveDataChannel.close();
-    receiveDataChannel = null;
-  }
-  // Close the peer connection
-  if (pc) {
-    pc.close();
-    pc = null;
-  }
-
-  // isInitiator = false;
-  // isChannelReady = false;
-  // pc.close();
-  // pc = null;
-  sendMessage('bye');
+  pc.close();
+  pc = null;
 }

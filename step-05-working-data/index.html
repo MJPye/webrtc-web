@@ -13,19 +13,15 @@
 
   <h1>Realtime communication with WebRTC</h1>
 
-  <video id="localVideo" autoplay playsinline></video>
-  <video id="remoteVideo" autoplay playsinline></video>
-
   <textarea id="dataChannelSend" disabled
-    placeholder="Press Start Data, enter some text, then press Send Data."></textarea>
+    placeholder="Press Start, enter some text, then press Send."></textarea>
   <textarea id="dataChannelReceive" disabled></textarea>
 
   <div id="buttons">
-    <button id="startDataButton">Start Data</button>
-    <button id="sendDataButton">Send Data</button>
-    <button id="addLocalStreamButton">Add Local Stream</button>
-    <button id="addRemoteStreamButton">Add Remote Stream</button>
+    <button id="startButton">Start Data</button>
+    <button id="sendButton">Send Data</button>
     <button id="closeButton">Stop</button>
+
   </div>
 
   <!-- This file is automatically added/served when running "node index.js". -->
