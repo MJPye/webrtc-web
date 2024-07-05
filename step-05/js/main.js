@@ -76,7 +76,7 @@ var pcConfig = {
 
 // Set up audio and video regardless of what devices are present.
 var sdpConstraints = {
-  offerToReceiveAudio: true,
+  offerToReceiveAudio: false,
   offerToReceiveVideo: true
 };
 
@@ -258,7 +258,8 @@ function createDataChannels() {
   }
 }
 
-function addRemoteStreamChannel(){
+function addRemoteStreamChannel() {
+  console.log('Actually Trying to add remote stream');
   try {
     pc.ontrack = handleRemoteStreamAdded; //MATT change stream to data
     pc.onremovestream = handleRemoteStreamRemoved; //MATT change stream to data
@@ -274,20 +275,25 @@ function gotStream(stream) {
   localStream = stream;
   localVideo.srcObject = stream;
   sendMessage('got user media');
-  pc.addTrack(localStream);
-  // if (isInitiator) {
-  //   maybeStart();
-  // }
+  if (pc) {
+    try {
+      stream.getTracks().forEach(track => {
+        pc.addTrack(track, stream);
+      });
+    } catch (e) {
+      console.log('Failed to add tracks to peer connection, exception: ' + e.message);
+      alert('Cannot add tracks to peer connection.');
+    }
+  }
 }
 
 var constraints = {
   video: true
 };
 
-function addLocalStreamChannel(){
+function addLocalStreamChannel() {
   try {
-    // var localVideo = document.querySelector('#localVideo');
-    // var remoteVideo = document.querySelector('#remoteVideo');
+    console.log('Requesting user media with constraints:', constraints);
 
     navigator.mediaDevices.getUserMedia({
       audio: false,
@@ -295,9 +301,9 @@ function addLocalStreamChannel(){
     })
     .then(gotStream)
     .catch(function(e) {
-      alert('getUserMedia() error: ' + e.name);
+      console.error('getUserMedia() error:', e); // Improved logging
+      // alert('getUserMedia() error: ' + e.message + ' (' + e.name + ')'); // Show detailed error message
     });
-    console.log('Getting user media with constraints', constraints);
     doCall();
   } catch (e) {
     console.log('Failed to create Stream Channels, exception: ' + e.message);
@@ -416,10 +422,15 @@ function requestTurn(turnURL) {
 }
 
 function handleRemoteStreamAdded(event) {
-  // var remoteVideo = document.querySelector('#remoteVideo');
-  console.log('Remote stream added.');
-  remoteStream = event.streams;
-  remoteVideo.srcObject = remoteStream;
+  console.log('Trying to handle remote stream');
+  try {
+    // event.streams is an array, so we need to get the first stream
+    remoteStream = event.streams[0];
+    remoteVideo.srcObject = remoteStream;
+  } catch (e) {
+    console.log('Failed to add remote stream ' + e.message);
+    return;
+  }
 }
 
 function handleRemoteStreamRemoved(event) {
