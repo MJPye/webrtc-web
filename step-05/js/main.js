@@ -300,11 +300,12 @@ function addLocalStreamChannel() {
       video: true
     })
     .then(gotStream)
+    .then(doCall)
     .catch(function(e) {
       console.error('getUserMedia() error:', e); // Improved logging
       // alert('getUserMedia() error: ' + e.message + ' (' + e.name + ')'); // Show detailed error message
     });
-    doCall();
+    // doCall();
   } catch (e) {
     console.log('Failed to create Stream Channels, exception: ' + e.message);
     alert('Cannot create Stream Channels object.');
