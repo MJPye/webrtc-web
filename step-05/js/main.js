@@ -1,5 +1,6 @@
 'use strict';
 
+// Variables for WebRTC connection
 var isChannelReady = false;
 var isInitiator = false;
 var isStarted = false;
@@ -7,13 +8,14 @@ var localStream;
 var pc;
 var remoteStream;
 var turnReady;
-
 var localConnection;
 var remoteConnection;
 var sendDataChannel;
 var receiveDataChannel;
 var pcConstraint;
 var dataConstraint;
+
+// HTML elements
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 var dataChannelSend = document.querySelector('textarea#dataChannelSend');
@@ -23,69 +25,44 @@ var sendDataButton = document.querySelector('button#sendDataButton');
 var addLocalStreamButton = document.querySelector('button#addLocalStreamButton');
 var addRemoteStreamButton = document.querySelector('button#addRemoteStreamButton');
 var closeButton = document.querySelector('button#closeButton');
-// var createConnectionButton = document.querySelector('button#createConnectionButton');
 
-startDataButton.onclick = createDataConnection;
-addLocalStreamButton.onclick = addLocalStreamChannel;
-addRemoteStreamButton.onclick = addRemoteStreamChannel;
-sendDataButton.onclick = sendData;
-closeButton.onclick = stop;
-
-function enableStartDataButton() {
-  startDataButton.disabled = false;
-}
-function disableStartDataButton() {
-  startDataButton.disabled = true;
-}
-function enableAddLocalStreamButton() {
-  addLocalStreamButton.disabled = false;
-}
-function disableAddLocalStreamButton() {
-  addLocalStreamButton.disabled = true;
-}
-function enableAddRemoteStreamButton() {
-  addRemoteStreamButton.disabled = false;
-}
-function disableAddRemoteStreamButton() {
-  addRemoteStreamButton.disabled = true;
-}
-function enableSendDataButton() {
-  sendDataButton.disabled = false;
-}
-function disableSendDataButton() {
-  sendDataButton.disabled = true;
-}
-// function enableCreateConnectionButton() {
-//   createConnectionButton.disabled = false;
-// }
-// function disableCreateConnectionButton() {
-//   createConnectionButton.disabled = true;
-// }
-function enableCloseButton() {
-  closeButton.disabled = false;
-}
-function disableCloseButton() {
-  closeButton.disabled = true;
-}
-
+// WebRTC configuration
 var pcConfig = {
   'iceServers': [{
     'urls': 'stun:stun.l.google.com:19302'
   }]
 };
 
-// Set up audio and video regardless of what devices are present.
 var sdpConstraints = {
   offerToReceiveAudio: false,
   offerToReceiveVideo: true
 };
 
-/////////////////////////////////////////////
+var constraints = {
+  video: true
+};
 
+// Button event handlers
+startDataButton.onclick = createDataConnection;
+addLocalStreamButton.onclick = addLocalStreamChannel;
+addRemoteStreamButton.onclick = addRemoteStreamChannel;
+sendDataButton.onclick = sendData;
+closeButton.onclick = stop;
+
+// Button state control functions
+function enableStartDataButton() { startDataButton.disabled = false; }
+function disableStartDataButton() { startDataButton.disabled = true; }
+function enableAddLocalStreamButton() { addLocalStreamButton.disabled = false; }
+function disableAddLocalStreamButton() { addLocalStreamButton.disabled = true; }
+function enableAddRemoteStreamButton() { addRemoteStreamButton.disabled = false; }
+function disableAddRemoteStreamButton() { addRemoteStreamButton.disabled = true; }
+function enableSendDataButton() { sendDataButton.disabled = false; }
+function disableSendDataButton() { sendDataButton.disabled = true; }
+function enableCloseButton() { closeButton.disabled = false; }
+function disableCloseButton() { closeButton.disabled = true; }
+
+// Room and socket connection
 var room = 'foo';
-// Could prompt for room name:
-// room = prompt('Enter room name:');
-
 var socket = io.connect();
 
 if (room !== '') {
@@ -93,41 +70,34 @@ if (room !== '') {
   console.log('Attempted to create or  join room', room);
 }
 
-socket.on('created', function(room) {
+socket.on('created', function (room) {
   console.log('Created room ' + room);
   isInitiator = true;
 });
 
-socket.on('full', function(room) {
+socket.on('full', function (room) {
   console.log('Room ' + room + ' is full');
 });
 
-socket.on('join', function (room){
+socket.on('join', function (room) {
   console.log('Another peer made a request to join room ' + room);
   console.log('This peer is the initiator of room ' + room + '!');
   isChannelReady = true;
 });
 
-socket.on('joined', function(room) {
+socket.on('joined', function (room) {
   console.log('joined: ' + room);
   isChannelReady = true;
 });
 
-socket.on('log', function(array) {
+socket.on('log', function (array) {
   console.log.apply(console, array);
 });
 
-////////////////////////////////////////////////
-
-function sendMessage(message) {
-  console.log('Client sending message: ', message);
-  socket.emit('message', message);
-}
-
-// This client receives a message
-socket.on('message', function(message) {
+// Socket message handling
+socket.on('message', function (message) {
   console.log('Client received message:', message);
-  if (message === 'initiate_data_transfer') { //MATT another trigger msg here
+  if (message === 'initiate_data_transfer') {
     maybeStart();
   } else if (message.type === 'offer') {
     if (!isInitiator && !isStarted) {
@@ -148,37 +118,13 @@ socket.on('message', function(message) {
   }
 });
 
-////////////////////////////////////////////////////
+// Send and receive messages through the socket
+function sendMessage(message) {
+  console.log('Client sending message: ', message);
+  socket.emit('message', message);
+}
 
-// var localVideo = document.querySelector('#localVideo');
-// var remoteVideo = document.querySelector('#remoteVideo');
-
-// navigator.mediaDevices.getUserMedia({
-//   audio: false,
-//   video: true
-// })
-// .then(gotStream)
-// .catch(function(e) {
-//   alert('getUserMedia() error: ' + e.name);
-// });
-
-// function gotStream(stream) {
-//   console.log('Adding local stream.');
-//   localStream = stream;
-//   localVideo.srcObject = stream;
-//   sendMessage('got user media');
-//   if (isInitiator) {
-//     maybeStart();
-//   }
-// }
-
-// var constraints = {
-//   video: true
-// };
-
-// console.log('Getting user media with constraints', constraints);
-
-// MATT Added the trigger without media
+// WebRTC connection setup
 function createDataConnection() {
   console.log("Creating connection Matt")
   sendMessage('initiate_data_transfer');
@@ -207,12 +153,6 @@ function maybeStart() {
     }
   }
 }
-
-window.onbeforeunload = function() {
-  sendMessage('bye');
-};
-
-/////////////////////////////////////////////////////////
 
 function createPeerConnection() {
   // dataChannelSend.placeholder = '';
@@ -256,100 +196,6 @@ function createDataChannels() {
     alert('Cannot create Data Channels object.');
     return;
   }
-}
-
-function addRemoteStreamChannel() {
-  console.log('Actually Trying to add remote stream');
-  try {
-    pc.ontrack = handleRemoteStreamAdded; //MATT change stream to data
-    pc.onremovestream = handleRemoteStreamRemoved; //MATT change stream to data
-  } catch (e) {
-    console.log('Failed to create Stream Channels, exception: ' + e.message);
-    alert('Cannot create Stream Channels object.');
-    return;
-  }
-}
-
-function gotStream(stream) {
-  console.log('Adding local stream.');
-  localStream = stream;
-  localVideo.srcObject = stream;
-  sendMessage('got user media');
-  if (pc) {
-    try {
-      stream.getTracks().forEach(track => {
-        pc.addTrack(track, stream);
-      });
-    } catch (e) {
-      console.log('Failed to add tracks to peer connection, exception: ' + e.message);
-      alert('Cannot add tracks to peer connection.');
-    }
-  }
-}
-
-var constraints = {
-  video: true
-};
-
-function addLocalStreamChannel() {
-  try {
-    console.log('Requesting user media with constraints:', constraints);
-
-    navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: true
-    })
-    .then(gotStream)
-    .then(doCall)
-    .catch(function(e) {
-      console.error('getUserMedia() error:', e); // Improved logging
-      // alert('getUserMedia() error: ' + e.message + ' (' + e.name + ')'); // Show detailed error message
-    });
-    // doCall();
-  } catch (e) {
-    console.log('Failed to create Stream Channels, exception: ' + e.message);
-    alert('Cannot create Stream Channels object.');
-    return;
-  }
-}
-
-function sendData() {
-  var data = dataChannelSend.value;
-  sendDataChannel.send(data);
-  console.log('Sent Data: ' + data);
-}
-
-function receiveDataChannelCallback(event) {
-  console.log('Receive Channel Callback');
-  receiveDataChannel = event.channel;
-  receiveDataChannel.onmessage = onReceiveMessageCallback;
-  receiveDataChannel.onopen = onReceiveDataChannelStateChange;
-  receiveDataChannel.onclose = onReceiveDataChannelStateChange;
-}
-
-function onReceiveMessageCallback(event) {
-  console.log('Received Message');
-  dataChannelReceive.value = event.data;
-}
-
-function onSendDataChannelStateChange() {
-  var readyState = sendDataChannel.readyState;
-  console.log('Send channel state is: ' + readyState);
-  if (readyState === 'open') {
-    dataChannelSend.disabled = false;
-    dataChannelSend.focus();
-    sendDataButton.disabled = false;
-    closeButton.disabled = false;
-  } else {
-    dataChannelSend.disabled = true;
-    sendDataButton.disabled = true;
-    closeButton.disabled = true;
-  }
-}
-
-function onReceiveDataChannelStateChange() {
-  var readyState = receiveDataChannel.readyState;
-  console.log('Receive channel state is: ' + readyState);
 }
 
 function handleIceCandidate(event) {
@@ -438,6 +284,99 @@ function handleRemoteStreamRemoved(event) {
   console.log('Remote stream removed. Event: ', event);
 }
 
+// Local and remote stream handling
+function addLocalStreamChannel() {
+  try {
+    console.log('Requesting user media with constraints:', constraints);
+
+    navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: true
+    })
+    .then(gotStream)
+    .then(doCall)
+    .catch(function(e) {
+      console.error('getUserMedia() error:', e); // Improved logging
+      // alert('getUserMedia() error: ' + e.message + ' (' + e.name + ')'); // Show detailed error message
+    });
+    // doCall();
+  } catch (e) {
+    console.log('Failed to create Stream Channels, exception: ' + e.message);
+    alert('Cannot create Stream Channels object.');
+    return;
+  }
+}
+
+function addRemoteStreamChannel() {
+  console.log('Actually Trying to add remote stream');
+  try {
+    pc.ontrack = handleRemoteStreamAdded; //MATT change stream to data
+    pc.onremovestream = handleRemoteStreamRemoved; //MATT change stream to data
+  } catch (e) {
+    console.log('Failed to create Stream Channels, exception: ' + e.message);
+    alert('Cannot create Stream Channels object.');
+    return;
+  }
+}
+
+function gotStream(stream) {
+  console.log('Adding local stream.');
+  localStream = stream;
+  localVideo.srcObject = stream;
+  sendMessage('got user media');
+  if (pc) {
+    try {
+      stream.getTracks().forEach(track => {
+        pc.addTrack(track, stream);
+      });
+    } catch (e) {
+      console.log('Failed to add tracks to peer connection, exception: ' + e.message);
+      alert('Cannot add tracks to peer connection.');
+    }
+  }
+}
+
+// Data channel handling
+function sendData() {
+  var data = dataChannelSend.value;
+  sendDataChannel.send(data);
+  console.log('Sent Data: ' + data);
+}
+
+function receiveDataChannelCallback(event) {
+  console.log('Receive Channel Callback');
+  receiveDataChannel = event.channel;
+  receiveDataChannel.onmessage = onReceiveMessageCallback;
+  receiveDataChannel.onopen = onReceiveDataChannelStateChange;
+  receiveDataChannel.onclose = onReceiveDataChannelStateChange;
+}
+
+function onReceiveMessageCallback(event) {
+  console.log('Received Message');
+  dataChannelReceive.value = event.data;
+}
+
+function onSendDataChannelStateChange() {
+  var readyState = sendDataChannel.readyState;
+  console.log('Send channel state is: ' + readyState);
+  if (readyState === 'open') {
+    dataChannelSend.disabled = false;
+    dataChannelSend.focus();
+    sendDataButton.disabled = false;
+    closeButton.disabled = false;
+  } else {
+    dataChannelSend.disabled = true;
+    sendDataButton.disabled = true;
+    closeButton.disabled = true;
+  }
+}
+
+function onReceiveDataChannelStateChange() {
+  var readyState = receiveDataChannel.readyState;
+  console.log('Receive channel state is: ' + readyState);
+}
+
+// Session control
 function hangup() {
   console.log('Hanging up.');
   stop();
@@ -476,3 +415,8 @@ function stop() {
   // pc = null;
   sendMessage('bye');
 }
+
+// Cleanup on window unload
+window.onbeforeunload = function() {
+  sendMessage('bye');
+};
