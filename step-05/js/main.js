@@ -167,6 +167,8 @@ function createPeerConnection() {
 
     pc.onicecandidate = handleIceCandidate;
     createDataChannels();
+    console.log('Adding Remotes Early');
+    addRemoteStreamChannel(); // MATT added this, maybe remove.
     // sendDataChannel.onopen = onSendDataChannelStateChange;
     // sendDataChannel.onclose = onSendDataChannelStateChange;
     // pc.ondatachannel = receiveDataChannelCallback;
