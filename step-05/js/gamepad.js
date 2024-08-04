@@ -3,7 +3,7 @@
 let controllerIndex = null;
 let gamepad = null;
 
-function setupEventListeners() {
+export function setupEventListeners() {
   window.addEventListener("gamepadconnected", (event) => {
     gamepad = event.gamepad;
     controllerIndex = gamepad.index;
@@ -19,7 +19,7 @@ function setupEventListeners() {
   });
 }
 
-function mapValues(gamepadArray, stickArray) {
+export function mapValues(gamepadArray, stickArray) {
   const firstArray = [
     'A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 
     'Select (left one)', 'Start (right one)', 
@@ -69,7 +69,7 @@ function mapValues(gamepadArray, stickArray) {
   return { rosButtonArray, rosStickArray };
 }
 
-function getGamepadValues() {
+export function getGamepadValues() {
   if (controllerIndex !== null) {
     gamepad = navigator.getGamepads()[controllerIndex];
     return mapValues(gamepad.buttons, gamepad.axes);
@@ -78,7 +78,7 @@ function getGamepadValues() {
 }
 
 // Initialize the event listeners when the module is loaded
-setupEventListeners();
+// setupEventListeners();
 
 // Export the function to be used in main.js
-module.exports { getGamepadValues };
+// module.exports = { getGamepadValues };
