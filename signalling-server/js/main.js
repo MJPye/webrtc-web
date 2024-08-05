@@ -5,7 +5,8 @@ var isChannelReady = true;
 var isInitiator = false;
 var isStarted = false;
 var localStream;
-var pc;
+var video_pc;
+var data_pc;
 var remoteStream;
 var turnReady;
 var localConnection;
@@ -44,7 +45,7 @@ var constraints = {
 
 // Button event handlers
 startDataButton.onclick = createDataConnection;
-addLocalStreamButton.onclick = addLocalStreamChannel;
+// addLocalStreamButton.onclick = addLocalStreamChannel;
 addRemoteStreamButton.onclick = addRemoteStreamChannel;
 sendDataButton.onclick = sendData;
 closeButton.onclick = stop;
@@ -95,18 +96,19 @@ socket.on('log', function (array) {
 });
 
 // Socket message handling
-socket.on('message', function (message) {
+socket.on('video-request', function (message) {
   console.log('Client received message:', message);
-  if (message === 'initiate_data_transfer') {
-    maybeStart();
-  } else if (message.type === 'offer') {
-    if (!isInitiator && !isStarted) {
-      maybeStart();
-    }
-    pc.setRemoteDescription(new RTCSessionDescription(message));
-    doAnswer();
+  // if (message === 'initiate_data_transfer') {
+  //   maybeStart();
+  // } else if (message.type === 'offer') {
+  //   if (!isInitiator && !isStarted) {
+  //     maybeStart();
+  //   }
+  //   video_pc.setRemoteDescription(new RTCSessionDescription(message));
+  //   doAnswer();
   // } else if (message.type === 'answer' && isStarted) {
-  } else if (message.type === 'answer') {
+  // } else if (message.type === 'answer') {
+  if (message.type === 'answer') {
     console.log('answer-received')
     //console.log(message)
     const sdpString = message.sdp
@@ -117,14 +119,14 @@ socket.on('message', function (message) {
       type: msgType,
       sdp: sdpString
     });
-    pc.setRemoteDescription(description);
-    //pc.setRemoteDescription(message);
-  } else if (message.type === 'candidate' && isStarted) {
-    var candidate = new RTCIceCandidate({
-      sdpMLineIndex: message.label,
-      candidate: message.candidate
-    });
-    pc.addIceCandidate(candidate);
+    video_pc.setRemoteDescription(description);
+    //video_pc.setRemoteDescription(message);
+  // } else if (message.type === 'candidate' && isStarted) {
+  //   var candidate = new RTCIceCandidate({
+  //     sdpMLineIndex: message.label,
+  //     candidate: message.candidate
+  //   });
+  //   video_pc.addIceCandidate(candidate);
   } else if (message === 'bye' && isStarted) {
     handleRemoteHangup();
   }
@@ -133,7 +135,7 @@ socket.on('message', function (message) {
 // Send and receive messages through the socket
 function sendMessage(message) {
   console.log('Client sending message: ', message);
-  socket.emit('message', message);
+  socket.emit('video-request', message);
 }
 
 // WebRTC connection setup
@@ -158,46 +160,52 @@ function maybeStart() {
   console.log("I am maybe-starting", isStarted, isChannelReady)
   if (!isStarted && isChannelReady) {
     console.log('>>>>>> creating peer connection');
-    createPeerConnection();
-    // pc.addStream(localStream); //MATT no stream
+    createVideoPeerConnection();
+    // video_pc.addStream(localStream); //MATT no stream
     isStarted = true;
     console.log('isInitiator', isInitiator);
     if (isInitiator) {
-      doCall();
+      doVideoCall();
+      // doDataCall();
     }
   }
 }
 
-function createPeerConnection() {
-  // dataChannelSend.placeholder = '';
-  // var servers = null;
-  // pcConstraint = null;
-  // dataConstraint = null;
+function createVideoPeerConnection() {
   try {
-    pc = new RTCPeerConnection({
+    video_pc = new RTCPeerConnection({
       iceServers: [{
         urls: ['stun:stun.l.google.com:19302']
       }],
       sdpSemantics: 'unified-plan'
     })
-    // sendDataChannel = pc.createDataChannel('sendDataChannel',
-    //   dataConstraint);
-    //   console.log('Created send data channel');
     console.log('Adding Remotes Early');
-    pc.addTransceiver('video', { direction: 'sendrecv' })
+    video_pc.addTransceiver('video', { direction: 'sendrecv' })
     addRemoteStreamChannel(); // MATT added this, maybe remove.
-    pc.onicecandidate = handleIceCandidate;
-    createDataChannels();
-    // pc.onnegotiationneeded = doCall;
-    // sendDataChannel.onopen = onSendDataChannelStateChange;
-    // sendDataChannel.onclose = onSendDataChannelStateChange;
-    // pc.ondatachannel = receiveDataChannelCallback;
-    // pc.onaddstream = handleRemoteStreamAdded; //MATT change stream to data
-    // pc.onremovestream = handleRemoteStreamRemoved; //MATT change stream to data
-    console.log('Created RTCPeerConnnection');
+    video_pc.onicecandidate = handleIceCandidate;
+    // createDataChannels();
+    console.log('Created Video RTCPeerConnnection');
   } catch (e) {
-    console.log('Failed to create PeerConnection, exception: ' + e.message);
-    alert('Cannot create RTCPeerConnection object.');
+    console.log('Failed to create Video PeerConnection, exception: ' + e.message);
+    alert('Cannot create Video RTCPeerConnection object.');
+    return;
+  }
+}
+
+function createDataPeerConnection() {
+  try {
+    data_pc = new RTCPeerConnection({
+      iceServers: [{
+        urls: ['stun:stun.l.google.com:19302']
+      }],
+      sdpSemantics: 'unified-plan'
+    })
+    data_pc.onicecandidate = handleIceCandidate;
+    createDataChannels();
+    console.log('Created Data RTCPeerConnnection');
+  } catch (e) {
+    console.log('Failed to create Data PeerConnection, exception: ' + e.message);
+    alert('Cannot create Data RTCPeerConnection object.');
     return;
   }
 }
@@ -206,12 +214,12 @@ function createDataChannels() {
   dataChannelSend.placeholder = ''; //MATT what happens if remove.
   dataConstraint = null;
   try {
-    sendDataChannel = pc.createDataChannel('sendDataChannel',
+    sendDataChannel = data_pc.createDataChannel('sendDataChannel',
       dataConstraint);
       console.log('Created send data channel');
     sendDataChannel.onopen = onSendDataChannelStateChange;
     sendDataChannel.onclose = onSendDataChannelStateChange;
-    pc.ondatachannel = receiveDataChannelCallback;
+    data_pc.ondatachannel = receiveDataChannelCallback;
     console.log('Created Data Channels');
   } catch (e) {
     console.log('Failed to create Data Channels, exception: ' + e.message);
@@ -238,22 +246,33 @@ function handleCreateOfferError(event) {
   console.log('createOffer() error: ', event);
 }
 
-function doCall() {
+function doVideoCall() {
   console.log('Sending offer to peer');
-  pc.createOffer(setLocalAndSendMessage, handleCreateOfferError);
+  video_pc.createOffer(setLocalAndSendMessageVideo, handleCreateOfferError);
 }
 
-function doAnswer() {
-  console.log('Sending answer to peer.');
-  pc.createAnswer().then(
-    setLocalAndSendMessage,
-    onCreateSessionDescriptionError
-  );
+function doDataCall() {
+  console.log('Sending offer to peer');
+  data_pc.createOffer(setLocalAndSendMessageData, handleCreateOfferError);
 }
 
-function setLocalAndSendMessage(sessionDescription) {
-  pc.setLocalDescription(sessionDescription);
-  console.log('setLocalAndSendMessage sending message', sessionDescription);
+// function doAnswer() {
+//   console.log('Sending answer to peer.');
+//   video_pc.createAnswer().then(
+//     setLocalAndSendMessage,
+//     onCreateSessionDescriptionError
+//   );
+// }
+
+function setLocalAndSendMessageVideo(sessionDescription) {
+  video_pc.setLocalDescription(sessionDescription);
+  console.log('setLocalAndSendMessageVideo sending message', sessionDescription);
+  sendMessage(sessionDescription);
+}
+
+function setLocalAndSendMessageData(sessionDescription) {
+  data_pc.setLocalDescription(sessionDescription);
+  console.log('setLocalAndSendMessageData sending message', sessionDescription);
   sendMessage(sessionDescription);
 }
 
@@ -306,34 +325,34 @@ function handleRemoteStreamRemoved(event) {
   console.log('Remote stream removed. Event: ', event);
 }
 
-// Local and remote stream handling
-function addLocalStreamChannel() {
-  try {
-    console.log('Requesting user media with constraints:', constraints);
+// Add the local webcam
+// function addLocalStreamChannel() {
+//   try {
+//     console.log('Requesting user media with constraints:', constraints);
 
-    navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: true
-    })
-    .then(gotStream)
-    .then(doCall)
-    .catch(function(e) {
-      console.error('getUserMedia() error:', e); // Improved logging
-      // alert('getUserMedia() error: ' + e.message + ' (' + e.name + ')'); // Show detailed error message
-    });
-    // doCall();
-  } catch (e) {
-    console.log('Failed to create Stream Channels, exception: ' + e.message);
-    alert('Cannot create Stream Channels object.');
-    return;
-  }
-}
+//     navigator.mediaDevices.getUserMedia({
+//       audio: false,
+//       video: true
+//     })
+//     .then(gotStream)
+//     .then(doCall)
+//     .catch(function(e) {
+//       console.error('getUserMedia() error:', e); // Improved logging
+//       // alert('getUserMedia() error: ' + e.message + ' (' + e.name + ')'); // Show detailed error message
+//     });
+//     // doCall();
+//   } catch (e) {
+//     console.log('Failed to create Stream Channels, exception: ' + e.message);
+//     alert('Cannot create Stream Channels object.');
+//     return;
+//   }
+// }
 
 function addRemoteStreamChannel() {
   console.log('Actually Trying to add remote stream');
   try {
-    pc.ontrack = handleRemoteStreamAdded; //MATT change stream to data
-    pc.onremovestream = handleRemoteStreamRemoved; //MATT change stream to data
+    video_pc.ontrack = handleRemoteStreamAdded; //MATT change stream to data
+    video_pc.onremovestream = handleRemoteStreamRemoved; //MATT change stream to data
   } catch (e) {
     console.log('Failed to create Stream Channels, exception: ' + e.message);
     alert('Cannot create Stream Channels object.');
@@ -346,10 +365,10 @@ function gotStream(stream) {
   localStream = stream;
   localVideo.srcObject = stream;
   sendMessage('got user media');
-  if (pc) {
+  if (video_pc) {
     try {
       stream.getTracks().forEach(track => {
-        pc.addTrack(track, stream);
+        video_pc.addTrack(track, stream);
       });
     } catch (e) {
       console.log('Failed to add tracks to peer connection, exception: ' + e.message);
@@ -426,15 +445,20 @@ function stop() {
     receiveDataChannel = null;
   }
   // Close the peer connection
-  if (pc) {
-    pc.close();
-    pc = null;
+  if (video_pc) {
+    video_pc.close();
+    video_pc = null;
+  }
+
+  if (data_pc) {
+    data_pc.close();
+    data_pc = null;
   }
 
   // isInitiator = false;
   // isChannelReady = false;
-  // pc.close();
-  // pc = null;
+  // video_pc.close();
+  // video_pc = null;
   sendMessage('bye');
 }
 

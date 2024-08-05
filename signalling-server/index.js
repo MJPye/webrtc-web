@@ -21,15 +21,7 @@ io.sockets.on('connection', function(socket) {
     socket.emit('log', array);
   }
 
-  socket.on('message', function(message) {
-
-    // MATT adding the part here where we send video request responses
-    // if (message.type === 'video-request') {
-    // fetch("http://localhost:8083/stream/f29c576b-bbfb-449a-be5a-180fd0a7bedc/channel/0/webrtc", {
-    //   method: 'POST',
-    //  body: new URLSearchParams({ data: btoa(message) })
-    // })
-    // console.log(message);
+  socket.on('video-request', function(message) {
     try {
       // Encode the message to base64
       const encodedMessage = Buffer.from(message.sdp).toString('base64');
@@ -42,7 +34,7 @@ io.sockets.on('connection', function(socket) {
             try {
               const decodedData = Buffer.from(response.data, 'base64').toString('utf-8');
               // socket.to(socket.id).emit('message', { type: 'answer', sdp: decodedData });
-              socket.emit('message', { type: 'answer', sdp: decodedData });
+              socket.emit('video-request', { type: 'answer', sdp: decodedData });
               console.log('Answer sent to ', socket.id);
             } catch (e) {
               console.error('Error decoding response data:', e);
@@ -57,11 +49,6 @@ io.sockets.on('connection', function(socket) {
     } catch (e) {
       console.error('Error encoding message:', e);
     }
-    // else {
-    //  log('Client said: ', message);
-    //  // for a real app, would be room-only (not broadcast)
-    //  socket.broadcast.emit('message', message);
-    //}
   });
 
   socket.on('create or join', function(room) {
