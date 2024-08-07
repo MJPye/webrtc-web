@@ -23,7 +23,7 @@ var dataChannelSend = document.querySelector('textarea#dataChannelSend');
 var dataChannelReceive = document.querySelector('textarea#dataChannelReceive');
 var startDataButton = document.querySelector('button#startDataButton');
 var sendDataButton = document.querySelector('button#sendDataButton');
-var addLocalStreamButton = document.querySelector('button#addLocalStreamButton');
+var startVideoButton = document.querySelector('button#startVideoButton');
 var addRemoteStreamButton = document.querySelector('button#addRemoteStreamButton');
 var closeButton = document.querySelector('button#closeButton');
 
@@ -45,7 +45,7 @@ var constraints = {
 
 // Button event handlers
 startDataButton.onclick = createDataConnection;
-// addLocalStreamButton.onclick = addLocalStreamChannel;
+startVideoButton.onclick = createVideoConnection;
 addRemoteStreamButton.onclick = addRemoteStreamChannel;
 sendDataButton.onclick = sendData;
 closeButton.onclick = stop;
@@ -53,8 +53,8 @@ closeButton.onclick = stop;
 // Button state control functions
 function enableStartDataButton() { startDataButton.disabled = false; }
 function disableStartDataButton() { startDataButton.disabled = true; }
-function enableAddLocalStreamButton() { addLocalStreamButton.disabled = false; }
-function disableAddLocalStreamButton() { addLocalStreamButton.disabled = true; }
+function enablestartVideoButton() { startVideoButton.disabled = false; }
+function disablestartVideoButton() { startVideoButton.disabled = true; }
 function enableAddRemoteStreamButton() { addRemoteStreamButton.disabled = false; }
 function disableAddRemoteStreamButton() { addRemoteStreamButton.disabled = true; }
 function enableSendDataButton() { sendDataButton.disabled = false; }
@@ -132,19 +132,58 @@ socket.on('video-request', function (message) {
   }
 });
 
+
+// Socket message handling
+socket.on('data-request', function (message) {
+  console.log('Client received message:', message);
+  if (message.type === 'answer' ) {
+    data_pc.setRemoteDescription(new RTCSessionDescription(message));
+  } else if (message.type === 'candidate' && isStarted) {
+    var candidate = new RTCIceCandidate({
+      sdpMLineIndex: message.label,
+      candidate: message.candidate
+    });
+    data_pc.addIceCandidate(candidate);
+  } else {
+    console.log('Client received non-answer data message:', message);
+  } 
+});
+
 // Send and receive messages through the socket
 function sendMessage(message) {
+  console.log('Client sending message: ', message);
+  socket.emit('message', message);
+}
+
+// Send and receive messages through the socket
+function sendMessageVideo(message) {
   console.log('Client sending message: ', message);
   socket.emit('video-request', message);
 }
 
+// Send and receive messages through the socket
+function sendMessageData(message) {
+  console.log('Client sending message: ', message);
+  socket.emit('data-request', message);
+}
+
 // WebRTC connection setup
-function createDataConnection() {
-  console.log("Creating connection Matt")
+function createVideoConnection() {
+  console.log("Creating Video connection Matt")
   // sendMessage('initiate_data_transfer');
   // if (isInitiator) {
   console.log("I am initiator so maybe-starting")
   maybeStart();
+  // }
+}
+
+// WebRTC connection setup
+function createDataConnection() {
+  console.log("Creating Data connection Matt")
+  // sendMessage('initiate_data_transfer');
+  // if (isInitiator) {
+  console.log("I am initiator so maybe-starting")
+  maybeStartData();
   // }
 }
 
@@ -166,6 +205,24 @@ function maybeStart() {
     console.log('isInitiator', isInitiator);
     if (isInitiator) {
       doVideoCall();
+      // doDataCall();
+    }
+  }
+}
+
+function maybeStartData() {
+  //console.log('>>>>>>> maybeStart() ', isStarted, localStream, isChannelReady);
+  // if (!isStarted && typeof localStream !== 'undefined' && isChannelReady) {
+  console.log("I am maybe-starting", isStarted, isChannelReady)
+  // if (!isStarted && isChannelReady) {
+  if (isChannelReady) {
+    console.log('>>>>>> creating peer connection');
+    createDataPeerConnection();
+    // video_pc.addStream(localStream); //MATT no stream
+    isStarted = true;
+    console.log('isInitiator', isInitiator);
+    if (isInitiator) {
+      doDataCall();
       // doDataCall();
     }
   }
@@ -231,7 +288,7 @@ function createDataChannels() {
 function handleIceCandidate(event) {
   console.log('icecandidate event: ', event);
   if (event.candidate) {
-    sendMessage({
+    sendMessageData({
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,
@@ -267,13 +324,13 @@ function doDataCall() {
 function setLocalAndSendMessageVideo(sessionDescription) {
   video_pc.setLocalDescription(sessionDescription);
   console.log('setLocalAndSendMessageVideo sending message', sessionDescription);
-  sendMessage(sessionDescription);
+  sendMessageVideo(sessionDescription);
 }
 
 function setLocalAndSendMessageData(sessionDescription) {
   data_pc.setLocalDescription(sessionDescription);
   console.log('setLocalAndSendMessageData sending message', sessionDescription);
-  sendMessage(sessionDescription);
+  sendMessageData(sessionDescription);
 }
 
 function onCreateSessionDescriptionError(error) {
