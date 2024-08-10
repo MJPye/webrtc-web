@@ -220,6 +220,7 @@ function maybeStartData() {
     createDataPeerConnection();
     // video_pc.addStream(localStream); //MATT no stream
     isStarted = true;
+    isInitiator = true;
     console.log('isInitiator', isInitiator);
     if (isInitiator) {
       doDataCall();
@@ -239,7 +240,7 @@ function createVideoPeerConnection() {
     console.log('Adding Remotes Early');
     video_pc.addTransceiver('video', { direction: 'sendrecv' })
     addRemoteStreamChannel(); // MATT added this, maybe remove.
-    video_pc.onicecandidate = handleIceCandidate;
+    // video_pc.onicecandidate = handleIceCandidate;
     // createDataChannels();
     console.log('Created Video RTCPeerConnnection');
   } catch (e) {
