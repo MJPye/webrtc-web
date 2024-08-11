@@ -1,8 +1,9 @@
 const io = require('socket.io-client');
 const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = require('wrtc');
+var data_pc;
 
 // Connect to the signaling server
-const socket = io.connect('http://localhost:8040');
+const socket = io.connect('http://localhost:8050');
 
 // Log connection status
 socket.on('connect', () => {
@@ -40,6 +41,8 @@ socket.on('data-request', function (message) {
       sdpMid: message.id
     });
     data_pc.addIceCandidate(candidate);
+  } else if (message === 'bye') {
+    handleRemoteHangup();
   } else {
     console.log('Client received non-answer data message:', message);
   } 
@@ -49,6 +52,15 @@ socket.on('data-request', function (message) {
 function sendMessageData(message) {
   console.log('Client sending message: ', message);
   socket.emit('data-request', message);
+}
+
+function handleRemoteHangup(){
+  console.log('Session terminated.');
+  if (data_pc){
+    data_pc.close();
+    data_pc = null;
+  }
+  start();
 }
 
 // function createDataPeerConnection() {
@@ -152,15 +164,6 @@ function handleIceCandidate(event) {
   }
 }
 
-function handleCreateOfferError(event) {
-  console.log('createOffer() error: ', event);
-}
-
-function doDataCall() {
-  console.log('Sending offer to peer');
-  data_pc.createOffer(setLocalAndSendMessageData, handleCreateOfferError);
-}
-
 function doAnswer() {
   console.log('Sending answer to peer.');
   data_pc.createAnswer().then(
@@ -179,10 +182,8 @@ function setLocalAndSendMessageData(sessionDescription) {
   sendMessageData(sessionDescription);
 }
 
-// createDataPeerConnection();
-// createDataChannels();
-
-createDataPeerConnection()
+function start(){
+  createDataPeerConnection()
   .then(() => {
     console.log('PeerConnection created, now creating data channels');
     createDataChannels();
@@ -190,3 +191,6 @@ createDataPeerConnection()
   .catch((error) => {
     console.error('Error creating peer connection or data channels:', error);
   });
+}
+
+start();

@@ -9,7 +9,7 @@ const axios = require('axios');
 var fileServer = new(nodeStatic.Server)();
 var app = http.createServer(function(req, res) {
   fileServer.serve(req, res);
-}).listen(8040);
+}).listen(8050);
 
 var io = socketIO.listen(app);
 io.sockets.on('connection', function(socket) {
@@ -55,6 +55,9 @@ io.sockets.on('connection', function(socket) {
     log('Client said: ', message);
     // for a real app, would be room-only (not broadcast)
     socket.broadcast.emit('data-request', message);
+    if (message === 'bye'){
+      console.log('A client has left connection')
+    }
   });
 
   socket.on('create or join', function(room) {

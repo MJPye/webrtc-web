@@ -138,7 +138,8 @@ socket.on('data-request', function (message) {
   console.log('Client received message:', message);
   if (message.type === 'answer' ) {
     data_pc.setRemoteDescription(new RTCSessionDescription(message));
-  } else if (message.type === 'candidate' && isStarted) {
+  // } else if (message.type === 'candidate' && isStarted) {
+  } else if (message.type === 'candidate') {
     var candidate = new RTCIceCandidate({
       sdpMLineIndex: message.label,
       candidate: message.candidate
@@ -197,16 +198,17 @@ function maybeStart() {
   //console.log('>>>>>>> maybeStart() ', isStarted, localStream, isChannelReady);
   // if (!isStarted && typeof localStream !== 'undefined' && isChannelReady) {
   console.log("I am maybe-starting", isStarted, isChannelReady)
-  if (!isStarted && isChannelReady) {
+  // if (!isStarted && isChannelReady) {
+  if (isChannelReady) {
     console.log('>>>>>> creating peer connection');
     createVideoPeerConnection();
     // video_pc.addStream(localStream); //MATT no stream
     isStarted = true;
     console.log('isInitiator', isInitiator);
-    if (isInitiator) {
-      doVideoCall();
+    // if (isInitiator) {
+    doVideoCall();
       // doDataCall();
-    }
+    // }
   }
 }
 
@@ -222,10 +224,10 @@ function maybeStartData() {
     isStarted = true;
     isInitiator = true;
     console.log('isInitiator', isInitiator);
-    if (isInitiator) {
-      doDataCall();
+    // if (isInitiator) {
+    doDataCall();
       // doDataCall();
-    }
+    // }
   }
 }
 
@@ -479,7 +481,7 @@ function onReceiveDataChannelStateChange() {
 function hangup() {
   console.log('Hanging up.');
   stop();
-  sendMessage('bye');
+  sendMessageData('bye');
 }
 
 function handleRemoteHangup() {
@@ -517,10 +519,10 @@ function stop() {
   // isChannelReady = false;
   // video_pc.close();
   // video_pc = null;
-  sendMessage('bye');
+  sendMessageData('bye');
 }
 
 // Cleanup on window unload
 window.onbeforeunload = function() {
-  sendMessage('bye');
+  sendMessageData('bye');
 };
