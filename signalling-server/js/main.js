@@ -17,7 +17,7 @@ var pcConstraint;
 var dataConstraint;
 
 // HTML elements
-const localVideo = document.getElementById('localVideo');
+// const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 var dataChannelSend = document.querySelector('textarea#dataChannelSend');
 var dataChannelReceive = document.querySelector('textarea#dataChannelReceive');
@@ -26,6 +26,12 @@ var sendDataButton = document.querySelector('button#sendDataButton');
 var startVideoButton = document.querySelector('button#startVideoButton');
 var addRemoteStreamButton = document.querySelector('button#addRemoteStreamButton');
 var closeButton = document.querySelector('button#closeButton');
+
+// D-Pad Buttons
+var forwardButton = document.querySelector('button#forwardButton');
+var backwardButton = document.querySelector('button#backwardButton');
+var leftButton = document.querySelector('button#leftButton');
+var rightButton = document.querySelector('button#rightButton');
 
 // WebRTC configuration
 var pcConfig = {
@@ -49,6 +55,10 @@ startVideoButton.onclick = createVideoConnection;
 addRemoteStreamButton.onclick = addRemoteStreamChannel;
 sendDataButton.onclick = sendData;
 closeButton.onclick = stop;
+forwardButton.onclick = function() { sendDpadCommand(0); };
+leftButton.onclick = function() { sendDpadCommand(1); };
+rightButton.onclick = function() { sendDpadCommand(2); };
+backwardButton.onclick = function() { sendDpadCommand(3); };
 
 // Button state control functions
 function enableStartDataButton() { startDataButton.disabled = false; }
@@ -61,6 +71,25 @@ function enableSendDataButton() { sendDataButton.disabled = false; }
 function disableSendDataButton() { sendDataButton.disabled = true; }
 function enableCloseButton() { closeButton.disabled = false; }
 function disableCloseButton() { closeButton.disabled = true; }
+
+// D-Pad Button enable/disable
+function enableDpadButtons() {
+  forwardButton.disabled = false;
+  backwardButton.disabled = false;
+  leftButton.disabled = false;
+  rightButton.disabled = false;
+}
+
+function disableDpadButtons() {
+  forwardButton.disabled = true;
+  backwardButton.disabled = true;
+  leftButton.disabled = true;
+  rightButton.disabled = true;
+}
+
+function sendDpadCommand(message) {
+  console.log('D-Pad value is ', message);
+}
 
 // Room and socket connection
 var room = 'foo';
@@ -420,22 +449,22 @@ function addRemoteStreamChannel() {
   }
 }
 
-function gotStream(stream) {
-  console.log('Adding local stream.');
-  localStream = stream;
-  localVideo.srcObject = stream;
-  sendMessage('got user media');
-  if (video_pc) {
-    try {
-      stream.getTracks().forEach(track => {
-        video_pc.addTrack(track, stream);
-      });
-    } catch (e) {
-      console.log('Failed to add tracks to peer connection, exception: ' + e.message);
-      alert('Cannot add tracks to peer connection.');
-    }
-  }
-}
+// function gotStream(stream) {
+//   console.log('Adding local stream.');
+//   localStream = stream;
+//   localVideo.srcObject = stream;
+//   sendMessage('got user media');
+//   if (video_pc) {
+//     try {
+//       stream.getTracks().forEach(track => {
+//         video_pc.addTrack(track, stream);
+//       });
+//     } catch (e) {
+//       console.log('Failed to add tracks to peer connection, exception: ' + e.message);
+//       alert('Cannot add tracks to peer connection.');
+//     }
+//   }
+// }
 
 // Data channel handling
 function sendData() {
@@ -465,10 +494,13 @@ function onSendDataChannelStateChange() {
     dataChannelSend.focus();
     sendDataButton.disabled = false;
     closeButton.disabled = false;
+    enableDpadButtons();
+
   } else {
     dataChannelSend.disabled = true;
     sendDataButton.disabled = true;
     closeButton.disabled = true;
+    disableDpadButtons();
   }
 }
 
