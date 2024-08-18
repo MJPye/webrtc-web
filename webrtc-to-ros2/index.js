@@ -1,9 +1,10 @@
 const io = require('socket.io-client');
+const rclnodejs = require('rclnodejs');
 const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = require('wrtc');
 var data_pc;
 
 // Connect to the signaling server
-const socket = io.connect('http://localhost:8050');
+const socket = io.connect('http://localhost:8020');
 
 // Log connection status
 socket.on('connect', () => {
@@ -194,3 +195,16 @@ function start(){
 }
 
 start();
+
+rclnodejs.init().then(() => {
+  const node = rclnodejs.createNode('publisher_example_node');
+  const publisher = node.createPublisher('std_msgs/msg/String', 'ya_boi_matt');
+
+  let counter = 0;
+  setInterval(() => {
+    console.log(`Publishing message: Hello ROS ${counter}`);
+    publisher.publish(`Hello ROS ${counter++}`);
+  }, 1000);
+
+  rclnodejs.spin(node);
+});
