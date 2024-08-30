@@ -2,6 +2,7 @@ let controllerIndex = null;
 var gamepad;
 
 window.addEventListener("gamepadconnected", (event) => {
+  console.log("Setting up gamepad event listeners");
   const gamepad = event.gamepad;
   controllerIndex = gamepad.index;
   console.log("connected");

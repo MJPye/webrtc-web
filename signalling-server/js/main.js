@@ -1,5 +1,8 @@
 'use strict';
 
+// Gamepad controls
+import * as gamepadController from './gamepad.js';
+
 // Variables for WebRTC connection
 var isChannelReady = true;
 var isInitiator = false;
@@ -32,6 +35,35 @@ var forwardButton = document.querySelector('button#forwardButton');
 var backwardButton = document.querySelector('button#backwardButton');
 var leftButton = document.querySelector('button#leftButton');
 var rightButton = document.querySelector('button#rightButton');
+
+// Set up gamepad event listeners
+gamepadController.setupEventListeners();
+
+// Function to log the gamepad state if connected
+function logGamepadState() {
+  // Check if the controller is connected
+  // console.log(gamepadController.controllerIndex);
+  if (gamepadController.controllerIndex !== null) {
+    const { rosButtonArray, rosStickArray } = gamepadController.getGamepadValues();
+    var gamepad_data = {
+      axes: rosStickArray,
+      buttons: rosButtonArray
+    };
+    var gamepad_data_string = JSON.stringify(gamepad_data);
+    // console.log('Gamepad Buttons:', rosButtonArray);
+    console.log(gamepad_data_string);
+    if (isStarted){
+      if (sendDataChannel.readyState === "open") {
+        sendGamepadData(gamepad_data_string);
+      }
+    }
+    // sendGamepadData(gamepad_data);
+  } else {
+    console.log('No gamepad connected');
+  }
+}
+// Set an interval to log the gamepad state at 10 Hz
+setInterval(logGamepadState, 100);
 
 // WebRTC configuration
 var pcConfig = {
@@ -471,6 +503,10 @@ function sendData() {
   var data = dataChannelSend.value;
   sendDataChannel.send(data);
   console.log('Sent Data: ' + data);
+}
+
+function sendGamepadData(data) {
+  sendDataChannel.send(data)
 }
 
 function receiveDataChannelCallback(event) {

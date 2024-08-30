@@ -3,8 +3,18 @@ const rclnodejs = require('rclnodejs');
 const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = require('wrtc');
 var data_pc;
 
+let publisher; // Declare the publisher variable here
+
+// ROS2 node initialization
+rclnodejs.init().then(() => {
+  const node = rclnodejs.createNode('publisher_example_node');
+  // Initialize the publisher globally
+  publisher = node.createPublisher('sensor_msgs/msg/Joy', '/joy');
+  rclnodejs.spin(node);
+});
+
 // Connect to the signaling server
-const socket = io.connect('http://localhost:8020');
+const socket = io.connect('http://localhost:8030');
 
 // Log connection status
 socket.on('connect', () => {
@@ -147,8 +157,33 @@ function onReceiveDataChannelStateChange() {
 }
 
 function onReceiveMessageCallback(event) {
+  var receivedData = JSON.parse(event.data);
+  console.log(receivedData.axes);
+  console.log(receivedData.buttons);
   console.log('Received Message: ', event.data);
   // dataChannelReceive.value = event.data;
+  sendJoyRos(receivedData.axes, receivedData.buttons);
+}
+
+// Function to send the received gamepad data to the ROS2 /joy topic
+function sendJoyRos(axes, buttons) {
+  // Create a message object in the format required by the ROS2 Joy message
+  const joyMessage = {
+    header: {
+      stamp: { sec: 0, nanosec: 0 }, // Replace with actual time if needed
+      frame_id: ''
+    },
+    axes: axes,
+    buttons: buttons.map(value => value > 0 ? 1 : 0) // Ensure buttons are integers
+  };
+
+  // Publish the message to ROS2
+  if (publisher) {
+    publisher.publish(joyMessage);
+    console.log('Published to /joy:', joyMessage);
+  } else {
+    console.error('Publisher is not initialized.');
+  }
 }
 
 function handleIceCandidate(event) {
@@ -196,15 +231,16 @@ function start(){
 
 start();
 
-rclnodejs.init().then(() => {
-  const node = rclnodejs.createNode('publisher_example_node');
-  const publisher = node.createPublisher('std_msgs/msg/String', 'ya_boi_matt');
+// rclnodejs.init().then(() => {
+//   const node = rclnodejs.createNode('publisher_example_node');
+//   // const publisher = node.createPublisher('std_msgs/msg/String', 'ya_boi_matt');
+//   const publisher = node.createPublisher('sensor_msgs/msg/Joy', '/joy');
 
-  let counter = 0;
-  setInterval(() => {
-    console.log(`Publishing message: Hello ROS ${counter}`);
-    publisher.publish(`Hello ROS ${counter++}`);
-  }, 1000);
+//   // let counter = 0;
+//   // setInterval(() => {
+//   //   // console.log(`Publishing message: Hello ROS ${counter}`);
+//   //   publisher.publish(`Hello ROS ${counter++}`);
+//   // }, 1000);
 
-  rclnodejs.spin(node);
-});
+//   rclnodejs.spin(node);
+// });

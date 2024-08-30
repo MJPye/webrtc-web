@@ -1,11 +1,12 @@
 // gamepad.js
 
-let controllerIndex = null;
-let gamepad = null;
+export let controllerIndex = null;
+var gamepad;
 
 export function setupEventListeners() {
   window.addEventListener("gamepadconnected", (event) => {
-    gamepad = event.gamepad;
+    console.log("Setting up gamepad event listeners");
+    const gamepad = event.gamepad;
     controllerIndex = gamepad.index;
     console.log("Gamepad connected:", gamepad);
   });
