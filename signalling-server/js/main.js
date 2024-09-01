@@ -527,7 +527,7 @@ function onSendDataChannelStateChange() {
   console.log('Send channel state is: ' + readyState);
   if (readyState === 'open') {
     dataChannelSend.disabled = false;
-    dataChannelSend.focus();
+    // dataChannelSend.focus();
     sendDataButton.disabled = false;
     closeButton.disabled = false;
     enableDpadButtons();

@@ -3,42 +3,44 @@
 
 <head>
   <title>Realtime communication with WebRTC</title>
-  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="css/main.css" />
 </head>
 
 <body>
 
   <h1>Realtime communication with WebRTC</h1>
 
-  <div style="display: flex; align-items: flex-start;">
-
+  <!-- Container for buttons and video -->
+  <div class="container">
     <!-- Buttons Section -->
-    <div id="buttons" style="display: flex; flex-direction: column; margin-right: 20px;">
+    <div id="buttons">
       <button id="startDataButton">Start Data</button>
       <button id="sendDataButton">Send Data</button>
       <button id="startVideoButton">Start Video</button>
       <button id="addRemoteStreamButton">Add Remote Stream</button>
       <button id="closeButton">Stop</button>
-
-      <!-- D-Pad Button Section -->
-      <div id="dpad" style="display: flex; flex-direction: column; align-items: center; margin-top: 20px;">
-        <button id="forwardButton" style="margin-bottom: 10px;">Forward</button>
-        <div style="display: flex; justify-content: space-between; width: 120px;">
-          <button id="leftButton">Rotate Left</button>
-          <button id="rightButton">Rotate Right</button>
-        </div>
-        <button id="backwardButton" style="margin-top: 10px;">Backward</button>
-      </div>
     </div>
 
     <!-- Video Streams Section -->
-    <div style="display: flex; flex-direction: column;">
-      <!--video id="localVideo" autoplay playsinline style="width: 640px; height: 480px; margin-bottom: 10px;"></video-->
-      <video id="remoteVideo" autoplay playsinline style="width: 320px; height: 240px;"></video>
-      <textarea id="dataChannelSend" disabled placeholder="Press Start Data, enter some text, then press Send Data."></textarea>
-      <textarea id="dataChannelReceive" disabled></textarea>
+    <div>
+      <video id="remoteVideo" autoplay playsinline></video>
     </div>
+  </div>
 
+  <!-- D-Pad Button Section -->
+  <div class="dpad-buttons" id="dpad">
+    <button id="forwardButton">Forward</button>
+    <div>
+      <button id="leftButton">Rotate Left</button>
+      <button id="rightButton">Rotate Right</button>
+    </div>
+    <button id="backwardButton">Backward</button>
+  </div>
+
+  <!-- Text Areas Section -->
+  <div id="text-send-receive">
+    <textarea id="dataChannelSend" disabled placeholder="Press Start Data, enter some text, then press Send Data."></textarea>
+    <textarea id="dataChannelReceive" disabled></textarea>
   </div>
 
   <!-- This file is automatically added/served when running "node index.js". -->
