@@ -2,6 +2,7 @@
 
 // Gamepad controls
 import * as gamepadController from './gamepad.js';
+import * as keyboardController from './keyboard_control.js'
 
 // Variables for WebRTC connection
 var isChannelReady = true;
@@ -29,15 +30,53 @@ var sendDataButton = document.querySelector('button#sendDataButton');
 var startVideoButton = document.querySelector('button#startVideoButton');
 var addRemoteStreamButton = document.querySelector('button#addRemoteStreamButton');
 var closeButton = document.querySelector('button#closeButton');
+var KeyboardControlSlider = document.getElementById('keyboardControlSlider');
 
 // D-Pad Buttons
 var forwardButton = document.querySelector('button#forwardButton');
 var backwardButton = document.querySelector('button#backwardButton');
 var leftButton = document.querySelector('button#leftButton');
 var rightButton = document.querySelector('button#rightButton');
+var keyboardControlEnabled = false;
 
-// Set up gamepad event listeners
-gamepadController.setupEventListeners();
+// Register the keyboard callback function
+// keyboardController.setKeyPressCallback(handleKeyPress);
+
+// Function to handle key events and publish the data
+function handleKeyPress(event) {
+  const { axes: rosStickArray, buttons: rosButtonArray } = event;
+  var keyboard_data = {
+    axes: rosStickArray,
+    buttons: rosButtonArray
+  };
+  var keyboard_data_string = JSON.stringify(keyboard_data);
+  // console.log('Gamepad Buttons:', rosButtonArray);
+  console.log(keyboard_data_string);
+  if (isStarted){
+    if (sendDataChannel.readyState === "open") {
+      sendGamepadData(keyboard_data_string);
+    }
+  }
+}
+
+// Check slider value and assign to variable from keyboard_control.js
+KeyboardControlSlider.addEventListener('change', (event) => {
+  keyboardControlEnabled = event.target.checked;
+  console.log(`Keyboard control ${keyboardControlEnabled ? 'enabled' : 'disabled'}`);
+
+  if (keyboardControlEnabled) {
+    // Enable keyboard control: Add event listeners
+    keyboardController.setupKeyboardEventListeners();
+  } else {
+    // Disable keyboard control: Remove event listeners
+    keyboardController.removeKeyboardEventListeners();
+  }
+});
+
+// Register the keyboard callback function
+keyboardController.setKeyPressCallback(handleKeyPress);
+
+
 
 // Function to log the gamepad state if connected
 function logGamepadState() {
