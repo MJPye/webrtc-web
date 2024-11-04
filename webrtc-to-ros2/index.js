@@ -14,7 +14,7 @@ rclnodejs.init().then(() => {
 });
 
 // Connect to the signaling server
-const socket = io.connect('http://localhost:8030');
+const socket = io.connect('http://localhost:8040');
 
 // Log connection status
 socket.on('connect', () => {
