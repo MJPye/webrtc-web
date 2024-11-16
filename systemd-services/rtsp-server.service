@@ -1,0 +1,12 @@
+[Unit]
+Description=Start RTSP server script in a screen session
+After=network.target
+
+[Service]
+Type=idle
+User=rpi
+WorkingDirectory=/home/rpi/webcam_testing
+ExecStart=/usr/bin/screen -dmS rtsp-server-service -L -Logfile /tmp/rtsp_server.log cd /home/rpi/webcam_testing && python3 test-low-bw-rtsp-server.py
+
+[Install]
+WantedBy=multi-user.target
