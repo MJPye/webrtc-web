@@ -2,7 +2,7 @@
 
 // Gamepad controls
 import * as gamepadController from './gamepad.js';
-// import * as keyboardController from './keyboard_control.js'
+import * as keyboardController from './keyboard_control.js'
 
 // Variables for WebRTC connection
 var isChannelReady = true;
@@ -43,40 +43,38 @@ var keyboardControlEnabled = false;
 // keyboardController.setKeyPressCallback(handleKeyPress);
 
 // Function to handle key events and publish the data
-// function handleKeyPress(event) {
-//   const { axes: rosStickArray, buttons: rosButtonArray } = event;
-//   var keyboard_data = {
-//     axes: rosStickArray,
-//     buttons: rosButtonArray
-//   };
-//   var keyboard_data_string = JSON.stringify(keyboard_data);
-//   // console.log('Gamepad Buttons:', rosButtonArray);
-//   console.log(keyboard_data_string);
-//   if (isStarted){
-//     console.log("Is Started");
-//     if (sendDataChannel.readyState === "open") {
-//       console.log("Sending keyboard command");
-//       sendGamepadData(keyboard_data_string);
-//     }
-//   }
-// }
+function handleKeyPress(event) {
+  const { axes: rosStickArray, buttons: rosButtonArray } = event;
+  var keyboard_data = {
+    axes: rosStickArray,
+    buttons: rosButtonArray
+  };
+  var keyboard_data_string = JSON.stringify(keyboard_data);
+  // console.log('Gamepad Buttons:', rosButtonArray);
+  // console.log(keyboard_data_string);
+  if (isStarted){
+    if (sendDataChannel.readyState === "open") {
+      sendGamepadData(keyboard_data_string);
+    }
+  }
+}
 
-// // Check slider value and assign to variable from keyboard_control.js
-// KeyboardControlSlider.addEventListener('change', (event) => {
-//   keyboardControlEnabled = event.target.checked;
-//   console.log(`Keyboard control ${keyboardControlEnabled ? 'enabled' : 'disabled'}`);
+// Check slider value and assign to variable from keyboard_control.js
+KeyboardControlSlider.addEventListener('change', (event) => {
+  keyboardControlEnabled = event.target.checked;
+  console.log(`Keyboard control ${keyboardControlEnabled ? 'enabled' : 'disabled'}`);
 
-//   if (keyboardControlEnabled) {
-//     // Enable keyboard control: Add event listeners
-//     keyboardController.setupKeyboardEventListeners();
-//   } else {
-//     // Disable keyboard control: Remove event listeners
-//     keyboardController.removeKeyboardEventListeners();
-//   }
-// });
+  if (keyboardControlEnabled) {
+    // Enable keyboard control: Add event listeners
+    keyboardController.setupKeyboardEventListeners();
+  } else {
+    // Disable keyboard control: Remove event listeners
+    keyboardController.removeKeyboardEventListeners();
+  }
+});
 
-// // Register the keyboard callback function
-// keyboardController.setKeyPressCallback(handleKeyPress);
+// Register the keyboard callback function
+keyboardController.setKeyPressCallback(handleKeyPress);
 
 // Set up gamepad event listeners
 gamepadController.setupEventListeners();
