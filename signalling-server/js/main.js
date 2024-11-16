@@ -78,7 +78,8 @@ var keyboardControlEnabled = false;
 // // Register the keyboard callback function
 // keyboardController.setKeyPressCallback(handleKeyPress);
 
-
+// Set up gamepad event listeners
+gamepadController.setupEventListeners();
 
 // Function to log the gamepad state if connected
 function logGamepadState() {
