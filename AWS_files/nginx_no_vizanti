@@ -1,0 +1,19 @@
+server {
+    listen 8443 ssl;
+    server_name robotinmattsflat.zapto.org;
+
+    ssl_certificate /etc/letsencrypt/live/robotinmattsflat.zapto.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/robotinmattsflat.zapto.org/privkey.pem;
+
+    # Enable Basic Authentication
+    auth_basic "Restricted Content";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+
+    location / {
+        proxy_pass http://172.27.1.3:8040;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
