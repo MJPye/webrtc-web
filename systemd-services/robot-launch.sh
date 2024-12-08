@@ -14,19 +14,25 @@ screen -S rtsp-to-webrtc-from-script -X stuff "cd /home/rpi/webcam_testing/RTSPt
 
 echo "rtsp-to-webrtc-from-script screen started"
 
-# 3. signalling-server
+# 3. vizanti
+screen -dmS vizanti-from-script /bin/bash -i
+screen -S vizanti-from-script -X stuff "cd /home/rpi/ros2_ws && source install/local_setup.sh && ros2 launch vizanti_server vizanti_rws.launch.py$(echo -ne '\r')"
+
+echo "vizanti-from-script screen started"
+
+# 4. signalling-server
 screen -dmS signalling-server-from-script /bin/bash -i
 screen -S signalling-server-from-script -X stuff "cd /home/rpi/webcam_testing/signalling-server && node index.js$(echo -ne '\r')"
 
 echo "signalling-server-from-script screen started"
 
-# 4. webrtc-to-ros2
+# 5. webrtc-to-ros2
 screen -dmS webrtc-to-ros2-from-script /bin/bash -i
 screen -S webrtc-to-ros2-from-script -X stuff "cd /home/rpi/webrtc-to-ros2 && node index.js$(echo -ne '\r')"
 
 echo "webrtc-to-ros2-from-script screen started"
 
-# 5. teleop-twist-joy
+# 6. teleop-twist-joy
 screen -dmS teleop-twist-joy-from-script /bin/bash -i
 screen -S teleop-twist-joy-from-script -X stuff "cd /home/rpi && ros2 launch teleop_twist_joy teleop-launch.py joy_config:='matthew'$(echo -ne '\r')"
 
