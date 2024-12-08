@@ -16,7 +16,7 @@ echo "rtsp-to-webrtc-from-script screen started"
 
 # 3. vizanti
 screen -dmS vizanti-from-script /bin/bash -i
-screen -S vizanti-from-script -X stuff "cd /home/rpi/ros2_ws && source install/local_setup.sh && ros2 launch vizanti_server vizanti_rws.launch.py$(echo -ne '\r')"
+screen -S vizanti-from-script -X stuff "cd /home/rpi/ros2_ws && source install/local_setup.sh && ros2 launch vizanti_server vizanti_rws.launch.py base_url:=/public$(echo -ne '\r')"
 
 echo "vizanti-from-script screen started"
 
