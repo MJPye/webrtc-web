@@ -3,6 +3,7 @@ id=Vodafone-1A49
 uuid=a58f2a30-7a4d-47d0-9d98-6fcecc8af15a
 type=wifi
 interface-name=wlan0
+autoconnect-priority=5
 
 [wifi]
 mode=infrastructure
@@ -14,6 +15,7 @@ key-mgmt=wpa-psk
 psk=bdH8bGFCmbRQbmRn
 
 [ipv4]
+route-metric=200
 method=auto
 
 [ipv6]
